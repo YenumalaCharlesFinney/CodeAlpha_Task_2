@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Handwritten Character Recognition</title>
+<style>
+    canvas {
+        border: 1px solid black;
+        cursor: crosshair;
+    }
+</style>
+</head>
+<body>
+<h1>Handwritten Character Recognition</h1>
+<canvas id="canvas" width="280" height="280"></canvas>
+<button onclick="clearCanvas()">Clear</button>
+<button onclick="recognizeCharacter()">Recognize</button>
+<div id="output"></div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let isDrawing = false;
+
+    canvas.addEventListener('mousedown', (e) => {
+        isDrawing = true;
+        draw(e.pageX - canvas.offsetLeft, e.pageY - canvas.offsetTop, false);
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        if (isDrawing) {
+            draw(e.pageX - canvas.offsetLeft, e.pageY - canvas.offsetTop, true);
+        }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+        isDrawing = false;
+    });
+
+    function draw(x, y, isDrawing) {
+        if (!isDrawing) {
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 5;
+            ctx.stroke();
+        }
+    }
+
+    function clearCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        document.getElementById('output').innerText = '';
+    }
+
+    function recognizeCharacter() {
+        const dataUrl = canvas.toDataURL();
+        const img = new Image();
+        img.src = dataUrl;
+        img.onload = function() {
+            const canvasTmp = document.createElement('canvas');
+            const ctxTmp = canvasTmp.getContext('2d');
+            canvasTmp.width = 28;
+            canvasTmp.height = 28;
+            ctxTmp.drawImage(img, 0, 0, 28, 28);
+            const imgData = ctxTmp.getImageData(0, 0, 28, 28);
+            const pixels = imgData.data;
+
+            let input = [];
+            for (let i = 0; i < pixels.length; i += 4) {
+                const grayscale = (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3;
+                input.push(grayscale / 255); // Normalize pixel values to range [0, 1]
+            }
+
+            // Recognize the drawn character based on a simple threshold
+            const recognizedCharacter = recognize(input);
+            document.getElementById('output').innerText = 'Recognized Character: ' + recognizedCharacter;
+        };
+    }
+
+    function recognize(input) {
+        // Simple threshold-based recognition for characters A, B, C, D
+        const threshold = 0.5;
+        if (input.some(pixel => pixel < threshold)) {
+            return 'A';
+        } else if (input.every(pixel => pixel >= threshold)) {
+            return 'B';
+        } else if (input[0] < threshold && input[1] < threshold) {
+            return 'C';
+        } else {
+            return 'D';
+        }
+    }
+</script>
+</body>
+</html>
